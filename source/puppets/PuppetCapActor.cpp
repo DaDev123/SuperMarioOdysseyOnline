@@ -9,6 +9,14 @@
 #include "server/gamemode/GameModeManager.hpp"
 #include "server/gamemode/GameModeBase.hpp"
 
+bool PuppetCapActor::sIsPlayerInSafeZone = true;
+int PuppetCapActor::sInvincibilityFromPunchAnim;
+
+class PlayerDamageKeeper{
+    public:
+        void damage(int);
+};
+
 PuppetCapActor::PuppetCapActor(const char *name) : al::LiveActor(name) {}
 
 void PuppetCapActor::init(al::ActorInitInfo const &initInfo) {
@@ -78,7 +86,15 @@ void PuppetCapActor::attackSensor(al::HitSensor* sender, al::HitSensor* receiver
     // prevent normal attack behavior if gamemode requires custom behavior
     if (GameModeManager::tryAttackCapSensor(sender, receiver))
         return;
-    
+    if(al::isSensorPlayer(receiver) && !PuppetCapActor::sIsPlayerInSafeZone && PuppetCapActor::sInvincibilityFromPunchAnim < 1){
+        al::sendMsgEnemyAttack(receiver, sender);
+
+    }else{
+        auto* receiverHost = al::getSensorHost(receiver);
+        auto* player = (PlayerActorHakoniwa*) al::getPlayerActor(receiverHost, 0);
+        if(!PuppetCapActor::sIsPlayerInSafeZone && player && player->mHackKeeper && player->mHackKeeper->currentHackActor && player->mHackKeeper->currentHackActor == receiverHost)
+            al::sendMsgEnemyAttack(receiver, sender);
+    }
     if (al::isSensorPlayer(receiver) && al::isSensorName(sender, "Push")) {
         rs::sendMsgPushToPlayer(receiver, sender);
     }

@@ -22,7 +22,13 @@
 #include "server/gamemode/GameModeBase.hpp"
 #include "server/hns/HideAndSeekMode.hpp"
 #include "server/snh/SardineMode.hpp"
+#include "game/HakoniwaSequence/HakoniwaSequence.h"
 // #include "server/manhunt/ManhuntMode.hpp"
+
+namespace al {
+    class IUseCamera;
+    void calcCameraFront(sead::Vector3<float>*, al::IUseCamera const*, int);
+}
 
 static const char *subActorNames[] = {
     "顔", // Face
@@ -217,28 +223,8 @@ void PuppetActor::control() {
             }
         }
 
-        if(mNameTag && !GameModeManager::instance()->isActive())
-            if(!mNameTag->mIsAlive)
-                mNameTag->appear();
-
-        if (mNameTag && GameModeManager::instance()->isActive()) {
-            GameMode curMode = GameModeManager::instance()->getGameMode();
-            switch(curMode) {
-                case GameMode::HIDEANDSEEK:
-                    mNameTag->mIsAlive = GameModeManager::instance()->getMode<HideAndSeekMode>()->isPlayerIt() && mInfo->isIt;
-                    break;
-                case GameMode::SARDINE:
-                    mNameTag->mIsAlive = GameModeManager::instance()->getMode<SardineMode>()->isPlayerIt() && mInfo->isIt;
-                    break;
-                case GameMode::FREEZETAG: {
-                    bool isRun = GameModeManager::instance()->getInfo<FreezeTagInfo>()->mIsPlayerRunner;
-                    mNameTag->mIsAlive = (isRun && mInfo->isFreezeTagRunner) || (!isRun && !mInfo->isFreezeTagRunner);
-                    break;
-                }
-                default:
-                    Logger::log("Name tag display failed due to unknown active game mode!\n");
-                    break;
-            };
+        if (mNameTag) {
+            mNameTag->mIsAlive = false;
         }
 
         // Sub-Actor Updating
@@ -252,8 +238,10 @@ void PuppetActor::control() {
     }
 }
 
+sead::Vector3f* curRunnerActorPos = nullptr;
+
 void PuppetActor::makeActorAlive() {
-    
+    curRunnerActorPos = al::getTransPtr(this);
     al::LiveActor *curModel = getCurrentModel();
 
     if (al::isDead(curModel)) {
@@ -272,7 +260,7 @@ void PuppetActor::makeActorAlive() {
 }
 
 void PuppetActor::makeActorDead() {
-
+    curRunnerActorPos = nullptr;
     al::LiveActor *curModel = getCurrentModel();
     
     if (!al::isDead(curModel)) {
@@ -285,6 +273,27 @@ void PuppetActor::makeActorDead() {
         mFreezeTagIceBlock->makeActorDead();
     
     al::LiveActor::makeActorDead();
+}
+
+bool overwriteCompassNorthDir(sead::Vector3f* out, const al::IUseSceneObjHolder*){
+    
+    auto* curSeq = (HakoniwaSequence*) GameSystemFunction::getGameSystem()->mSequence;
+    al::calcCameraFront(out, curSeq->curScene, 0);
+    out->y = 0;
+    out->normalize();
+    return true;
+}
+
+void compassPlayerDirHook(sead::Vector3f* out){
+    if(!curRunnerActorPos){
+        *out = sead::Vector3f::zero;
+        return;
+    }
+    auto* curSeq = (HakoniwaSequence*) GameSystemFunction::getGameSystem()->mSequence;
+    auto playerPos = al::getTrans(rs::getPlayerActor(curSeq->curScene));
+    *out = *curRunnerActorPos - playerPos;
+    out->y = 0;
+    out->normalize();
 }
 
 void PuppetActor::attackSensor(al::HitSensor* source, al::HitSensor* target) {
