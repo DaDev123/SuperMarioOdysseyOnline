@@ -1,4 +1,5 @@
 [version=100, target=main]
+
 //StageScene::control+18 BL stageSceneHook
 4C8DD0 BL stageInitHook // hook to the init of a stage to modify certain conditions (we also have access to SceneInitInfo)
 50F928 BL hakoniwaSequenceHook
@@ -143,3 +144,64 @@ B59E28 B seadPrintHook // sead::system::print
 50ef28 BL speedboot::hakoniwaSetNerveSetup
 50eb88 ORR w2, wzr, #0x1f // nerve state count
 50eb64 BL speedboot::prepareLayoutInitInfo
+
+1c9f64 BL healTwice
+1d03d4 BL 0x00000071005286f0
+1cf108 BL 0x00000071005286f0
+1d2ddc BL 0x00000071005286f0
+1d1360 BL 0x00000071005286f0
+1D14B0 BL 0x00000071005286f0
+4DF160 BL 0x00000071005287C8
+4DC6B0 BL 0x00000071005287C8
+
+249c70 BL healThreeTimes
+
+1F756C BL overwriteCompassNorthDir
+1F7594 BL compassPlayerDirHook
+
+43f83c NOP
+
+//53896c NOP
+
+//Compass
+1F72B4 BL checkAssistMode
+
+//Moon cutscene
+1CF0F4 BL moonCutsceneReplace
+1D134C BL moonCutsceneReplace
+1D1478 BL moonCutsceneReplace
+
+1D1454 BL storyMoonCutsceneReplace
+
+//Multi moons
+550168:
+    mov w0, #1
+    ret
+
+//Notes
+2D250C B 71002D2604
+
+//Always able to skip odyssey traveling cutscene
+50FF48 NOP
+
+//Cutscene auto skip
+4EFAE8 mov w0, #1
+5516A8:
+    mov w0, #0
+    ret
+
+//Find barriers
+913BA8 BL fixMapPartsInitHook
+
+//Remove boss barriers from bowser's
+009F7C BL barrierAppearHook
+
+//Remove freeze animation after last punch on bowser
+//0892F8 NOP
+//08936C NOP
+//08952C NOP
+//089520 NOP
+//089BB4 NOP
+
+//LifeUpMaxItem demo skip
+4DB934 NOP
