@@ -39,6 +39,11 @@
 static int pInfSendTimer = 0;
 static int gameInfSendTimer = 0;
 
+al::LiveActor* barrierOn = nullptr;
+al::LiveActor* barrierOff = nullptr;
+StageScene* globalScene = nullptr;
+bool doMoonCutsceneSkip = true;
+
 void updatePlayerInfo(GameDataHolderAccessor holder, PlayerActorBase* playerBase, bool isYukimaru) {
     
     if (pInfSendTimer >= 3) {
@@ -301,6 +306,8 @@ void sendShinePacket(GameDataHolderAccessor thisPtr, Shine* curShine) {
 
 void stageInitHook(al::ActorInitInfo *info, StageScene *curScene, al::PlacementInfo const *placement, al::LayoutInitInfo const *lytInfo, al::ActorFactory const *factory, al::SceneMsgCtrl *sceneMsgCtrl, al::GameDataHolderBase *dataHolder) {
 
+    barrierOn = nullptr;
+    barrierOff = nullptr;
     al::initActorInitInfo(info, curScene, placement, lytInfo, factory, sceneMsgCtrl,
                           dataHolder);
 
@@ -353,6 +360,7 @@ bool threadInit(HakoniwaSequence *mainSeq) {  // hook for initializing client cl
 
 bool hakoniwaSequenceHook(HakoniwaSequence* sequence) {
     StageScene* stageScene = (StageScene*)sequence->curScene;
+    globalScene = stageScene;
 
     static bool isCameraActive = false;
 
@@ -373,6 +381,16 @@ bool hakoniwaSequenceHook(HakoniwaSequence* sequence) {
     updatePlayerInfo(stageScene->mHolder, playerBase, isYukimaru);
 
     static bool isDisableMusic = false;
+
+    PlayerActorHakoniwa* player = (PlayerActorHakoniwa*) playerBase;
+    if(isInGame && player){
+        if(PuppetCapActor::sInvincibilityFromPunchAnim > 0)
+            PuppetCapActor::sInvincibilityFromPunchAnim--;
+
+        const char* curPlayerAnim = player->mPlayerAnimator->curAnim.cstr();
+        if(curPlayerAnim && al::isEqualSubString(curPlayerAnim, "KoopaCapPunch"))
+            PuppetCapActor::sInvincibilityFromPunchAnim = 120;
+    }
 
     if (al::isPadHoldZR(-1)) {
         if (al::isPadTriggerUp(-1)) debugMode = !debugMode;
@@ -397,7 +415,10 @@ bool hakoniwaSequenceHook(HakoniwaSequence* sequence) {
         }
 
     } else if (al::isPadHoldL(-1)) {
-        if (al::isPadTriggerLeft(-1)) GameModeManager::instance()->toggleActive();
+        if(al::isPadTriggerR(-1)){
+            doMoonCutsceneSkip = !doMoonCutsceneSkip;
+        }
+        //if (al::isPadTriggerLeft(-1)) GameModeManager::instance()->toggleActive();
         if (al::isPadTriggerRight(-1)) {
             if (debugMode) {
                 
@@ -448,6 +469,22 @@ bool hakoniwaSequenceHook(HakoniwaSequence* sequence) {
     if(isFirstStep && GameModeManager::instance()->isMode(GameMode::FREEZETAG))
         GameModeManager::instance()->getMode<FreezeTagMode>()->setWipeHolder(sequence->mWipeHolder);
 
+    if(!barrierOn || !barrierOff)
+        return isFirstStep;
+
+    al::LiveActor* firstPuppet = Client::getPuppet(0);
+    al::LiveActor* checkDistanceTo = firstPuppet && al::isAlive(firstPuppet) && !rs::isKidsMode(stageScene) ? firstPuppet : playerBase;
+
+    if(al::calcDistanceH(checkDistanceTo, barrierOn) < 1640.f){
+        al::hideModelIfShow(barrierOff);
+        al::showModelIfHide(barrierOn);
+        PuppetCapActor::sIsPlayerInSafeZone = true;
+    }else {
+        al::showModelIfHide(barrierOff);
+        al::hideModelIfShow(barrierOn);
+        PuppetCapActor::sIsPlayerInSafeZone = false;
+    }
+
     return isFirstStep;
 
 }
@@ -460,4 +497,64 @@ void seadPrintHook(const char *fmt, ...)
     Logger::log(fmt, args);
 
     va_end(args);
+}
+
+class Shine;
+
+namespace rs {
+    bool requestStartDemoShineGet(Shine*);
+}
+
+bool moonCutsceneReplace(void* shine){
+    if(!globalScene || !globalScene->mIsAlive)
+        return false;
+    globalScene->mSceneLayout->startShineCountAnim(false);
+    globalScene->mSceneLayout->updateCounterParts();
+    PlayerActorHakoniwa* player = (PlayerActorHakoniwa*) rs::getPlayerActor(globalScene);
+    if(!player)
+        return false;
+    const char* curPlayerAnim = player->mPlayerAnimator->curAnim.cstr();
+    if((al::isEqualSubString(curPlayerAnim, "Motorcycle") || al::isEqualSubString(curPlayerAnim, "SphinxRide")) || (player->mHackKeeper && player->mHackKeeper->currentHackActor))
+        return true;
+    player->startDemoPuppetable();
+    auto* transPtr = al::getTransPtr(player);
+    transPtr->y += 30;
+    player->endDemoPuppetable();
+    return true;
+}
+
+bool storyMoonCutsceneReplace(void* shine){
+    if(!globalScene || !globalScene->mIsAlive)
+        return false;
+    globalScene->kill();
+    return true;
+}
+
+namespace al {
+    bool trySyncStageSwitchAppearAndKill(LiveActor*);
+    const char* getModelName(const LiveActor* actor);
+    void startNerveAction(LiveActor*, const char*);
+}
+
+bool fixMapPartsInitHook(al::LiveActor* thisPtr){
+    const char* modelName = al::getModelName(thisPtr);
+    //if(!modelName)
+        //return al::trySyncStageSwitchAppearAndKill(thisPtr); //Orig
+    if(al::isEqualString(modelName, "LaLumiere"))
+       barrierOn = thisPtr;
+    if(al::isEqualString(modelName, "LaLumiereOFF"))
+        barrierOff = thisPtr;
+    return al::trySyncStageSwitchAppearAndKill(thisPtr); //Orig
+}
+
+void barrierAppearHook(al::LiveActor* thisPtr, const char* actionName){
+    if(al::isEqualString(GameDataFunction::getCurrentStageName(thisPtr), "SkyWorldHomeStage") && al::calcDistanceH(thisPtr, sead::Vector3f{5722.f, 29000.f, -41583.f}) < 200)
+        //thisPtr->kill();
+    al::startNerveAction(thisPtr, "Disappear");
+    else
+        al::startNerveAction(thisPtr, actionName);
+}
+
+bool checkAssistMode(GameDataHolderAccessor accessor){
+    return !rs::isKidsMode(accessor.mData);
 }
