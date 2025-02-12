@@ -163,6 +163,12 @@ namespace al
 
     f32 calcDistance(al::LiveActor const *, al::LiveActor const*); // calculates distance between two actors
 
+    f32 calcDistanceV(al::LiveActor const *, al::LiveActor const*);
+
+    f32 calcDistanceH(al::LiveActor const *, al::LiveActor const*); 
+
+    f32 calcDistanceH(al::LiveActor const *, sead::Vector3f const&); 
+
     f32 calcDistance(al::LiveActor const *, sead::Vector3f const&); // calculates distance between an actor and a position in the world
 
     void calcFrontDir(sead::Vector3f *result, al::LiveActor const *actor);
