@@ -41,14 +41,11 @@ StageSceneStateServerConfig::StageSceneStateServerConfig(const char *name, al::S
 
     mMainOptionsList->unkInt1 = 1;
 
-    mMainOptionsList->initDataNoResetSelected(5);
+    mMainOptionsList->initDataNoResetSelected(2);
 
-    sead::SafeArray<sead::WFixedSafeString<0x200>, 5>* mainMenuOptions =
-        new sead::SafeArray<sead::WFixedSafeString<0x200>, 5>();
+    sead::SafeArray<sead::WFixedSafeString<0x200>, 2>* mainMenuOptions =
+        new sead::SafeArray<sead::WFixedSafeString<0x200>, 2>();
 
-    mainMenuOptions->mBuffer[ServerConfigOption::GAMEMODECONFIG].copy(u"Gamemode Config");
-    mainMenuOptions->mBuffer[ServerConfigOption::GAMEMODESWITCH].copy(u"Change Gamemode");
-    mainMenuOptions->mBuffer[ServerConfigOption::RECONNECT].copy(u"Reconnect to Server");
     mainMenuOptions->mBuffer[ServerConfigOption::SETIP].copy(u"Change Server IP");
     mainMenuOptions->mBuffer[ServerConfigOption::SETPORT].copy(u"Change Server Port");
 
@@ -72,46 +69,7 @@ StageSceneStateServerConfig::StageSceneStateServerConfig(const char *name, al::S
 
     // gamemode select menu
 
-    mModeSelect = new SimpleLayoutMenu("GamemodeSelectMenu", "OptionSelect", initInfo, 0, false);
-    mModeSelectList = new CommonVerticalList(mModeSelect, initInfo, true);
-
-    al::setPaneString(mModeSelect, "TxtOption", u"Gamemode Selection", 0);
-
-    const int modeCount = GameModeFactory::getModeCount();
-
-    mModeSelectList->initDataNoResetSelected(modeCount);
-
-    sead::SafeArray<sead::WFixedSafeString<0x200>, modeCount>* modeSelectOptions =
-        new sead::SafeArray<sead::WFixedSafeString<0x200>, modeCount>();
-
-    for (size_t i = 0; i < modeCount; i++) {
-        const char* modeName = GameModeFactory::getModeName(i);
-        modeSelectOptions->mBuffer[i].convertFromMultiByteString(modeName, strlen(modeName));
-    }
-
-    mModeSelectList->addStringData(modeSelectOptions->mBuffer, "TxtContent");
-
-    // gamemode config menu
-    GameModeConfigMenuFactory factory("GameModeConfigFactory");
-    for (int mode = 0; mode < factory.getMenuCount(); mode++) {
-        GameModeEntry& entry = mGamemodeConfigMenus[mode];
-        const char* name = factory.getMenuName(mode);
-        entry.mMenu = factory.getCreator(name)(name);
-        entry.mLayout = new SimpleLayoutMenu("GameModeConfigMenu", "OptionSelect", initInfo, 0, false);
-        entry.mList = new CommonVerticalList(entry.mLayout, initInfo, true);
-
-        al::setPaneString(entry.mLayout, "TxtOption", u"Gamemode Configuration", 0);
-
-        entry.mList->initDataNoResetSelected(entry.mMenu->getMenuSize());
-
-
-        entry.mList->addStringData(entry.mMenu->getStringData(), "TxtContent");
-    }
-
-
-    mCurrentList = mMainOptionsList;
-    mCurrentMenu = mMainOptions;
-}
+    
 
 void StageSceneStateServerConfig::init() {
     initNerve(&nrvStageSceneStateServerConfigMainMenu, 0);
@@ -168,18 +126,6 @@ void StageSceneStateServerConfig::exeMainMenu() {
 
     if (mIsDecideConfig && mCurrentList->isDecideEnd()) {
         switch (mCurrentList->mCurSelected) {
-        case ServerConfigOption::GAMEMODECONFIG: {
-            al::setNerve(this, &nrvStageSceneStateServerConfigGamemodeConfig);
-            break;
-        }
-        case ServerConfigOption::GAMEMODESWITCH: {
-            al::setNerve(this, &nrvStageSceneStateServerConfigGamemodeSelect);
-            break;
-        }
-        case ServerConfigOption::RECONNECT: {
-            al::setNerve(this, &nrvStageSceneStateServerConfigRestartServer);
-            break;
-        }
         case ServerConfigOption::SETIP: {
             al::setNerve(this, &nrvStageSceneStateServerConfigOpenKeyboardIP);
             break;
@@ -230,75 +176,6 @@ void StageSceneStateServerConfig::exeOpenKeyboardPort() {
             al::setNerve(this, &nrvStageSceneStateServerConfigSaveData);
         else
             al::setNerve(this, &nrvStageSceneStateServerConfigMainMenu);
-    }
-}
-
-void StageSceneStateServerConfig::exeRestartServer() {
-    if (al::isFirstStep(this)) {
-        mCurrentList->deactivate();
-
-        Client::showConnect();
-
-        Client::restartConnection();
-    }
-
-    if (Client::isSocketActive()) {
-
-        Client::hideConnect();
-
-        al::startHitReaction(mCurrentMenu, "リセット", 0);
-        
-        al::setNerve(this, &nrvStageSceneStateServerConfigMainMenu);
-    } else {
-        al::setNerve(this, &nrvStageSceneStateServerConfigConnectError);
-    }
-}
-
-void StageSceneStateServerConfig::exeGamemodeConfig() {
-    if (al::isFirstStep(this)) {
-        mGamemodeConfigMenu = &mGamemodeConfigMenus[GameModeManager::instance()->getGameMode()];
-        mCurrentList = mGamemodeConfigMenu->mList;
-        mCurrentMenu = mGamemodeConfigMenu->mLayout;
-        subMenuStart();
-    }
-
-    subMenuUpdate();
-
-    if (mIsDecideConfig && mCurrentList->isDecideEnd()) {
-        if (mGamemodeConfigMenu->mMenu->updateMenu(mCurrentList->mCurSelected)) {
-            endSubMenu();
-        }
-    }
-}
-
-void StageSceneStateServerConfig::exeGamemodeSelect() {
-    if (al::isFirstStep(this)) {
-
-        mCurrentList = mModeSelectList;
-        mCurrentMenu = mModeSelect;
-
-        subMenuStart();
-
-    }
-
-    subMenuUpdate();
-
-    if (mIsDecideConfig && mCurrentList->isDecideEnd()) {
-        Logger::log("Setting Server Mode to: %d\n", mCurrentList->mCurSelected);
-        GameModeManager::instance()->setMode(static_cast<GameMode>(mCurrentList->mCurSelected));
-        endSubMenu();
-    }
-}
-
-void StageSceneStateServerConfig::exeConnectError() {
-    if (al::isFirstStep(this)) {
-        Client::showConnectError(u"Failed to Reconnect!");
-    }
-
-    if (al::isGreaterEqualStep(this, 60)) { // close after 1 second
-        Client::hideConnect();
-        al::startHitReaction(mCurrentMenu, "リセット", 0);
-        al::setNerve(this, &nrvStageSceneStateServerConfigMainMenu);
     }
 }
 
@@ -373,9 +250,5 @@ namespace {
 NERVE_IMPL(StageSceneStateServerConfig, MainMenu)
 NERVE_IMPL(StageSceneStateServerConfig, OpenKeyboardIP)
 NERVE_IMPL(StageSceneStateServerConfig, OpenKeyboardPort)
-NERVE_IMPL(StageSceneStateServerConfig, RestartServer)
-NERVE_IMPL(StageSceneStateServerConfig, GamemodeConfig)
-NERVE_IMPL(StageSceneStateServerConfig, GamemodeSelect)
 NERVE_IMPL(StageSceneStateServerConfig, SaveData)
-NERVE_IMPL(StageSceneStateServerConfig, ConnectError)
 }
