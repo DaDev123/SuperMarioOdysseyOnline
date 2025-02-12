@@ -415,10 +415,7 @@ bool hakoniwaSequenceHook(HakoniwaSequence* sequence) {
         }
 
     } else if (al::isPadHoldL(-1)) {
-        if(al::isPadTriggerR(-1)){
-            doMoonCutsceneSkip = !doMoonCutsceneSkip;
-        }
-        //if (al::isPadTriggerLeft(-1)) GameModeManager::instance()->toggleActive();
+        if (al::isPadTriggerLeft(-1)) GameModeManager::instance()->toggleActive();
         if (al::isPadTriggerRight(-1)) {
             if (debugMode) {
                 

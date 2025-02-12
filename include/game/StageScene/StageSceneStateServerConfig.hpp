@@ -27,9 +27,6 @@ class StageSceneStateServerConfig : public al::HostStateBase<al::Scene>, public 
                                     FooterParts*, GameDataHolder*, bool);
 
         enum ServerConfigOption {
-            GAMEMODECONFIG,
-            GAMEMODESWITCH,
-            RECONNECT,
             SETIP,
             SETPORT
         };
@@ -86,9 +83,5 @@ namespace {
     NERVE_HEADER(StageSceneStateServerConfig, MainMenu)
     NERVE_HEADER(StageSceneStateServerConfig, OpenKeyboardIP)
     NERVE_HEADER(StageSceneStateServerConfig, OpenKeyboardPort)
-    NERVE_HEADER(StageSceneStateServerConfig, RestartServer)
-    NERVE_HEADER(StageSceneStateServerConfig, GamemodeConfig)
-    NERVE_HEADER(StageSceneStateServerConfig, GamemodeSelect)
     NERVE_HEADER(StageSceneStateServerConfig, SaveData)
-    NERVE_HEADER(StageSceneStateServerConfig, ConnectError)
 }

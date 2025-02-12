@@ -1,3 +1,4 @@
+#pragma once
 #include "server/hns/HideAndSeekMode.hpp"
 #include <cmath>
 #include "al/async/FunctorV0M.hpp"
@@ -10,6 +11,8 @@
 #include "game/Player/PlayerActorBase.h"
 #include "game/Player/PlayerActorHakoniwa.h"
 #include "heap/seadHeapMgr.h"
+#include "game/Player/PlayerHitPointData.h"
+#include "game/Player/HackCap.h"
 #include "layouts/HideAndSeekIcon.h"
 #include "logger.hpp"
 #include "math/seadVector.h"
@@ -26,6 +29,9 @@
 
 #include "basis/seadNew.h"
 #include "server/hns/HideAndSeekConfigMenu.hpp"
+
+#include "game/HakoniwaSequence/HakoniwaSequence.h"
+#include "game/StageScene/StageScene.h"
 
 HideAndSeekMode::HideAndSeekMode(const char* name) : GameModeBase(name) {}
 
@@ -115,7 +121,9 @@ void HideAndSeekMode::begin() {
     
     mInvulnTime = 0.0f;
 
+
     GameModeBase::begin();
+
 }
 
 
@@ -147,82 +155,65 @@ void HideAndSeekMode::unpause() {
     }
 }
 
-void HideAndSeekMode::update() {
+bool ManHuntKidsMode(GameDataFile* thisPtr)
+{
+    HideAndSeekMode* mode = GameModeManager::instance()->getMode<HideAndSeekMode>();
 
+    if (mode && mode->isPlayerIt() && GameModeManager::instance()->isModeAndActive(GameMode::HIDEANDSEEK))
+        return true;
+    
+    return thisPtr->mIsKidsMode;
+}
+
+
+void HideAndSeekMode::update() {
     PlayerActorBase* playerBase = rs::getPlayerActor(mCurScene);
 
     bool isYukimaru = !playerBase->getPlayerInfo(); // if PlayerInfo is a nullptr, that means we're dealing with the bound bowl racer
 
     if (mIsFirstFrame) {
-
         if (mInfo->mIsUseGravityCam && mTicket) {
             al::startCamera(mCurScene, mTicket, -1);
         }
-
         mIsFirstFrame = false;
     }
 
-    if (rs::isActiveDemoPlayerPuppetable(playerBase)) {
-        mInvulnTime = 0.0f; // if player is in a demo, reset invuln time
+    // Check if the player is "It"
+    if (mInfo->mIsPlayerIt) {
+        // Only refill health once if the player is "It"
+        if (!hasRefilledHealthIt) {
+            PlayerHitPointData* hit = mCurScene->mHolder.mData->mGameDataFile->getPlayerHitPointData();
+            
+            // Trigger Kids Mode based on the ManHuntKidsMode function
+            hit->mIsKidsMode = ManHuntKidsMode(mCurScene->mHolder.mData->mGameDataFile); 
+            float maxHealth = hit->getMaxWithoutItem();  // Get max health value
+            hit->mCurrentHit = maxHealth;
+
+            hasRefilledHealthIt = true; // Prevent further refills when "It"
+        }
+    } else {
+        // Only refill health once if the player is NOT "It"
+        if (!hasRefilledHealthNotIt) {
+            PlayerHitPointData* hit = mCurScene->mHolder.mData->mGameDataFile->getPlayerHitPointData();
+            
+            hit->mIsKidsMode = false; // Not in Kids Mode if the player is not "It"
+            float maxHealth = hit->getMaxWithoutItem();  // Get max health value
+            hit->mCurrentHit = maxHealth;
+
+            hasRefilledHealthNotIt = true; // Prevent further refills when NOT "It"
+        }
+    }
+    
+    // Reset the refill flags when the player changes state (It -> Not It or vice versa)
+    if (mInfo->mIsPlayerIt && hasRefilledHealthNotIt) {
+        hasRefilledHealthNotIt = false;
+    } else if (!mInfo->mIsPlayerIt && hasRefilledHealthIt) {
+        hasRefilledHealthIt = false;
     }
 
-    if (!mInfo->mIsPlayerIt) {
-        if (mInvulnTime >= 5) {  
 
-            if (playerBase) {
-                for (size_t i = 0; i < mPuppetHolder->getSize(); i++)
-                {
-                    PuppetInfo *curInfo = Client::getPuppetInfo(i);
-
-                    if (!curInfo) {
-                        Logger::log("Checking %d, hit bounds %d-%d\n", i, mPuppetHolder->getSize(), Client::getMaxPlayerCount());
-                        break;
-                    }
-
-                    if(curInfo->isConnected && curInfo->isInSameStage && curInfo->isIt) {
-
-                        sead::Vector3f offset = sead::Vector3f(0.0f, 80.0f, 0.0f);
-            
-                        float pupDist = vecDistance(curInfo->playerPos + offset, al::getTrans(playerBase) + offset); // TODO: remove distance calculations and use hit sensors to determine this
-
-                        if (!isYukimaru) {
-                            if(pupDist < 200.f && ((PlayerActorHakoniwa*)playerBase)->mDimKeeper->is2DModel == curInfo->is2D) {
-                                if(!PlayerFunction::isPlayerDeadStatus(playerBase)) {
-                                    
-                                    GameDataFunction::killPlayer(GameDataHolderAccessor(this));
-                                    playerBase->startDemoPuppetable();
-                                    al::setVelocityZero(playerBase);
-                                    rs::faceToCamera(playerBase);
-                                    ((PlayerActorHakoniwa*)playerBase)->mPlayerAnimator->endSubAnim();
-                                    ((PlayerActorHakoniwa*)playerBase)->mPlayerAnimator->startAnimDead();
-
-                                    mInfo->mIsPlayerIt = true;
-                                    mModeTimer->disableTimer();
-                                    mModeLayout->showSeeking();
-                                    
-                                    Client::sendGamemodePacket();
-                                }
-                            } else if (PlayerFunction::isPlayerDeadStatus(playerBase)) {
-
-                                mInfo->mIsPlayerIt = true;
-                                mModeTimer->disableTimer();
-                                mModeLayout->showSeeking();
-
-                                Client::sendGamemodePacket();
-                                
-                            }
-                        }
-                    }
-                }
-            }
-        }else {
-            mInvulnTime += Time::deltaTime;
-        }
-
-        mModeTimer->updateTimer();
-        
-    } else {
-        mModeTimer->timerControl();
+    if (rs::isActiveDemoPlayerPuppetable(playerBase)) {
+        mInvulnTime = 0.0f; // if player is in a demo, reset invuln time
     }
 
     if (mInfo->mIsUseGravity && !isYukimaru) {
@@ -273,14 +264,8 @@ void HideAndSeekMode::update() {
 
 // Hooks
 
+
 namespace al {
     class Triangle;
     bool isFloorCode(al::Triangle const&,char const*);
-}
-
-bool skateFloorCodeHook(al::Triangle const& tri, char const* code) {
-    if (GameModeManager::instance()->isModeAndActive(GameMode::HIDEANDSEEK)) {
-        return GameModeManager::instance()->getInfo<HideAndSeekInfo>()->mIsUseSlipperyGround;
-    }
-    return al::isFloorCode(tri, code);
 }

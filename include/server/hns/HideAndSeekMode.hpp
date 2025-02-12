@@ -18,6 +18,9 @@ struct HideAndSeekInfo : GameModeInfoBase {
     bool mIsUseGravity = false;
     bool mIsUseGravityCam = false;
     bool mIsUseSlipperyGround = true;
+    bool hasStageBeenReloaded = false; // Flag to check if stage has been reloaded
+    bool hasRefilledHealthIt = false;  // Flag for health refill when player is "It"
+    bool hasRefilledHealthNotIt = false; // Flag for health refill when player is NOT "It"
     GameTime mHidingTime;
 };
 
@@ -52,7 +55,7 @@ class HideAndSeekMode : public GameModeBase {
         void processPacket(Packet* packet) override;
         Packet* createPacket() override;
 
-        bool isPlayerIt() const { return mInfo->mIsPlayerIt; }
+        bool isPlayerIt() const { return mInfo ? mInfo->mIsPlayerIt : false; }
 
         float getInvulnTime() const { return mInvulnTime; }
 
@@ -65,6 +68,12 @@ class HideAndSeekMode : public GameModeBase {
         void setCameraTicket(al::CameraTicket* ticket) { mTicket = ticket; }
 
     private:
+
+    bool hasStageBeenReloaded = false; // Flag to check if stage has been reloaded
+    bool hasRefilledHealthIt = false;  // Flag for health refill when player is "It"
+    bool hasRefilledHealthNotIt = false; // Flag for health refill when player is NOT "It"
+
+
         float mInvulnTime = 0.0f;
         GameModeTimer* mModeTimer = nullptr;
         HideAndSeekIcon *mModeLayout = nullptr;
