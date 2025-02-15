@@ -174,17 +174,17 @@ bool borderPullBackHook(WorldEndBorderKeeper* thisPtr) {
 float followDistHook() {
     switch(curSize){
         case NORMAL:
-            return 893.f;
+            return 270.f;
             break;
         case SMALL:
             return 270.f;
             break;
         case BIG:
-            return 1750.f;
+            return 270.f;
             break;
             break;
         case VERYBIG:
-            return 3750.f;
+            return 270.f;
             break;
     }
 }
@@ -204,7 +204,8 @@ const char* offsetOverideHook(al::ByamlIter const& iter, char const* key) {
 PlayerConst* createPlayerConstHook(char const* suffix) {
     switch(curSize){
         case NORMAL:
-            return PlayerFunction::createMarioConst(suffix);
+            PlayerConst* cons = PlayerFunction::createMarioConst(al::StringTmp<0x20>("Small%s", suffix).cstr());
+            return cons;
             break;
         case SMALL: {
             PlayerConst* cons = PlayerFunction::createMarioConst(al::StringTmp<0x20>("Small%s", suffix).cstr());
@@ -212,12 +213,12 @@ PlayerConst* createPlayerConstHook(char const* suffix) {
             break;
         }
         case BIG: {
-            PlayerConst* cons = PlayerFunction::createMarioConst(al::StringTmp<0x20>("Big%s", suffix).cstr());
+            PlayerConst* cons = PlayerFunction::createMarioConst(al::StringTmp<0x20>("Small%s", suffix).cstr());
             return cons;
             break;
         }
         case VERYBIG: {
-            PlayerConst* cons = PlayerFunction::createMarioConst(al::StringTmp<0x20>("VeryBig%s", suffix).cstr());
+            PlayerConst* cons = PlayerFunction::createMarioConst(al::StringTmp<0x20>("Small%s", suffix).cstr());
             return cons;
             break;
         }
@@ -278,16 +279,16 @@ float fpHook() {
 float fpScaleHook() {
     switch(curSize){
         case NORMAL:
-            return 0.94f;
+            return 31.3ff;
             break;
         case SMALL:
             return 31.3f;
             break;
         case BIG:
-            return 0.24f;
-            break;
+            return 31.3f;
             break;
         case VERYBIG:
+            return 31.3f;
             break;
     }
 }
