@@ -203,10 +203,11 @@ const char* offsetOverideHook(al::ByamlIter const& iter, char const* key) {
 
 PlayerConst* createPlayerConstHook(char const* suffix) {
     switch(curSize){
-        case NORMAL:
+        case NORMAL: {
             PlayerConst* cons = PlayerFunction::createMarioConst(al::StringTmp<0x20>("Small%s", suffix).cstr());
             return cons;
             break;
+        }
         case SMALL: {
             PlayerConst* cons = PlayerFunction::createMarioConst(al::StringTmp<0x20>("Small%s", suffix).cstr());
             return cons;
