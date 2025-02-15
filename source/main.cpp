@@ -31,8 +31,8 @@
 static int pInfSendTimer = 0;
 static int gameInfSendTimer = 0;
 
-int curSize = PlayerSize::NORMAL;
-float scale = 1.f;
+int curSize = PlayerSize::SMALL;
+float scale = 0.3f;
 
 void updatePlayerInfo(GameDataHolderAccessor holder, PlayerActorBase* playerBase, bool isYukimaru) {
     
@@ -428,25 +428,25 @@ bool hakoniwaSequenceHook(HakoniwaSequence* sequence) {
 
     switch(curSize){
         case NORMAL:
-            scale = 1.f;
+            scale = 0.3f;
             break;
         case SMALL:
             scale = 0.3f;
             break;
         case BIG:
-            scale = 4.f;
+            scale = 0.3f;
             break;
         case VERYBIG:
-            scale = 8.f;
+            scale = 0.3f;
             break;
     }
     
     if(pScale->x != scale) {
-        al::setScaleAll(p1, scale);
+        al::setScaleAll(p1, 0.3f);
     }
 
     if(capScale->x != scale) {
-        al::setScaleAll(p1->mHackCap, scale);
+        al::setScaleAll(p1->mHackCap, 0.3f);
     }
 
     return isFirstStep;
