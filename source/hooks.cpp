@@ -280,7 +280,7 @@ float fpHook() {
 float fpScaleHook() {
     switch(curSize){
         case NORMAL:
-            return 31.3ff;
+            return 31.3f;
             break;
         case SMALL:
             return 31.3f;
