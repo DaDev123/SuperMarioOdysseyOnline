@@ -456,16 +456,16 @@ bool hakoniwaSequenceHook(HakoniwaSequence* sequence) {
         if (al::isPadTriggerLeft(-1)) { // L + Left => Activate gamemode
             GameModeManager::instance()->toggleActive();
         }
-        if (al::isPadTriggerUp(-1)) { // L + Up => Disable background music
-            isDisableMusic = !isDisableMusic;
-        }
     }
 
-    if (isDisableMusic) {
+    if (Client::isMusicDisabled()) {
+
         if (al::isPlayingBgm(stageScene)) {
             al::stopAllBgm(stageScene, 0);
         }
     }
+
+
 
     if (isFirstStep) {
         GameModeBase* mode = GameModeManager::instance()->getMode<GameModeBase>();

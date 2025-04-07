@@ -52,7 +52,7 @@ struct PuppetInfo {
     bool           isCapThrow           = false;
     bool           isHoldThrow          = false;
 
-    // Hide and Seek & Sardines Gamemode Info
+    // Hide and Seek, Sardines & Infection Gamemode Info
     bool isIt    = false;
     u8   seconds = 0;
     u16  minutes = 0;
@@ -61,6 +61,9 @@ struct PuppetInfo {
     inline bool hnsIsHiding()  const { return !isIt; }
     inline bool snhIsPack()    const { return  isIt; }
     inline bool snhIsAlone()   const { return !isIt; }
+    inline bool infectionIsSeeking() const { return  isIt; }
+    inline bool infectionIsHiding()  const { return !isIt; }
+    
 
     // Freeze Tag Gamemode Info
     uint16_t freezeTagScore       = 0;

@@ -5,7 +5,7 @@ int            FreezeTagInfo::mRoundLength = 10;
 bool           FreezeTagInfo::mIsHostMode  = false;
 bool           FreezeTagInfo::mIsDebugMode = false;
 
-bool FreezeTagInfo::mHasMarioCollision = true;
+bool FreezeTagInfo::mHasMarioCollision = false;
 bool FreezeTagInfo::mHasMarioBounce    = false;
-bool FreezeTagInfo::mHasCappyCollision = true;
+bool FreezeTagInfo::mHasCappyCollision = false;
 bool FreezeTagInfo::mHasCappyBounce    = false;

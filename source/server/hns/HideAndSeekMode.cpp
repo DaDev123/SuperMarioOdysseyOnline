@@ -262,9 +262,9 @@ bool HideAndSeekMode::showNameTag(PuppetInfo* other) {
 void HideAndSeekMode::debugMenuControls(sead::TextWriter* gTextWriter) {
     gTextWriter->printf("- L + ← | Enable/disable Hide & Seek [H&S]\n");
     gTextWriter->printf("- [H&S] ↑ | Switch between hider and seeker\n");
-    gTextWriter->printf("- [H&S][Hider] ← | Decrease hiding time\n");
-    gTextWriter->printf("- [H&S][Hider] → | Increase hiding time\n");
-    gTextWriter->printf("- [H&S][Hider] L + ↓ | Reset hiding time\n");
+    gTextWriter->printf("- [H&S] ← | Decrease hiding time\n");
+    gTextWriter->printf("- [H&S] → | Increase hiding time\n");
+    gTextWriter->printf("- [H&S] L + ↓ | Reset hiding time\n");
     gTextWriter->printf("- [H&S][Gravity] L + → | Toggle gravity camera\n");
 }
 

@@ -33,6 +33,7 @@ class StageSceneStateServerConfig : public al::HostStateBase<al::Scene>, public 
             GAMEMODESWITCH,
             SETIP,
             SETPORT,
+            TOGGLEMUSIC,
             HIDESERVER,
         };
 
@@ -45,6 +46,7 @@ class StageSceneStateServerConfig : public al::HostStateBase<al::Scene>, public 
         void exeOpenKeyboardIP();
         void exeOpenKeyboardPort();
         void exeHideServer();
+        void exeToggleMusic();
         void exeGamemodeConfig();
         void exeGamemodeSelect();
         void exeSaveData();
@@ -87,7 +89,7 @@ class StageSceneStateServerConfig : public al::HostStateBase<al::Scene>, public 
         inline void deactivateInput();
 
         // Main Menu Options
-        static constexpr int mMainMenuOptionsCount = 5;
+        static constexpr int mMainMenuOptionsCount = 6;
         sead::SafeArray<sead::WFixedSafeString<0x200>, mMainMenuOptionsCount>* mMainMenuOptions = nullptr;
         const sead::WFixedSafeString<0x200>* getMainMenuOptions();
 
@@ -99,6 +101,7 @@ namespace {
     NERVE_HEADER(StageSceneStateServerConfig, OpenKeyboardIP)
     NERVE_HEADER(StageSceneStateServerConfig, OpenKeyboardPort)
     NERVE_HEADER(StageSceneStateServerConfig, HideServer)
+    NERVE_HEADER(StageSceneStateServerConfig, ToggleMusic)
     NERVE_HEADER(StageSceneStateServerConfig, GamemodeConfig)
     NERVE_HEADER(StageSceneStateServerConfig, GamemodeSelect)
     NERVE_HEADER(StageSceneStateServerConfig, SaveData)

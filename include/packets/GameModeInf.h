@@ -17,7 +17,7 @@ struct PACKED GameModeInf : Packet {
         if (mode == GameMode::LEGACY) {
             u8 type = mModeAndType & 0x0f;
 
-            // STATE and TIME (H&S or Sardines)
+            // STATE and TIME (H&S or Sardines or Infection)
             if (type == 3) {
                 return GameMode::LEGACY;
             }
@@ -76,7 +76,7 @@ struct PACKED GameModeInf : Packet {
 struct PACKED DisabledGameModeInf : GameModeInf<u8> {
     DisabledGameModeInf(nn::account::Uid userID) : GameModeInf() {
         setGameMode(GameMode::NONE);
-        setUpdateType(3); // so that legacy Hide&Seek and Sardines clients will parse isIt = false
+        setUpdateType(3); // so that legacy Hide&Seek, Sardines & Infection clients will parse isIt = false
         mUserID     = userID;
         mPacketSize = sizeof(DisabledGameModeInf) - sizeof(Packet);
     };
